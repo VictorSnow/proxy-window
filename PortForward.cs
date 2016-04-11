@@ -13,7 +13,6 @@ namespace Proxy
 
         public Socket local;
         public Socket remote;
-        public bool close = true;
 
         private byte[] buffLocal = new byte[BUFFSIZE];
         private byte[] buffRemote = new byte[BUFFSIZE];
@@ -22,7 +21,6 @@ namespace Proxy
         {
             this.local = local;
             this.remote = remote;
-            close = false;
         }
 
         public void startForward()
@@ -33,33 +31,41 @@ namespace Proxy
 
         ~PortForward()
         {
-            //Console.WriteLine("释放成功");
+            Console.WriteLine("释放成功");
         }
 
-        public void fallback()
+        public void fallback(Exception e)
         {
+            //Console.WriteLine(e.ToString());
+
             try
             {
-                local.Close();
+                if(local != null)
+                {
+                    local.Close();
+                    local = null;
+                    buffLocal = null;
+                }
             }
             catch (Exception ex)
             {
-                //Console.WriteLine(ex.ToString());
+                Console.WriteLine(ex.ToString());
             }
             try
             {
-                remote.Close();
+                if(remote != null)
+                {
+                    remote.Close();
+                    remote = null;
+                    buffRemote = null;
+                }
             }
             catch (Exception ex)
             {
-                //Console.WriteLine(ex.ToString());
+                Console.WriteLine(ex.ToString());
             }
 
-            local.Dispose();
-            remote.Dispose();
-
-            buffRemote = null;
-            buffLocal = null;
+            Console.WriteLine("异常关闭");
         }
 
         public void LocalRecvCallback(IAsyncResult ar)
@@ -69,18 +75,15 @@ namespace Proxy
                 int recv = local.EndReceive(ar);
                 if(recv > 0)
                 {
-                    this.encoder(buffLocal, recv);
-                    remote.BeginSend(buffLocal, 0, recv, 0, new AsyncCallback(LocalSendCallback), null);
+                    byte[] dest = this.encoder(buffLocal, recv);
+                    remote.BeginSend(dest, 0, recv, 0, new AsyncCallback(LocalSendCallback), null);
+                    local.BeginReceive(buffLocal, 0, BUFFSIZE, 0, new AsyncCallback(LocalRecvCallback), null);
+                    return;   
                 }
-                else
-                {
-                    fallback();
-                }  
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //Console.WriteLine(ex.ToString());
-                fallback();
+                fallback(ex);
             }
         }
 
@@ -89,12 +92,11 @@ namespace Proxy
             try
             {
                 remote.EndSend(ar);
-                local.BeginReceive(buffLocal, 0, BUFFSIZE, 0, new AsyncCallback(LocalRecvCallback), null);
+                return;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //Console.WriteLine(ex.ToString());
-                fallback();
+                fallback(ex);
             }
         }
 
@@ -105,18 +107,15 @@ namespace Proxy
                 int recv = remote.EndReceive(ar);
                 if (recv > 0)
                 {
-                    this.encoder(buffRemote, recv);
-                    local.BeginSend(buffRemote, 0, recv, 0, new AsyncCallback(RemoteSendCallback), null);
-                }
-                else
-                {
-                    fallback();
+                    byte[] dest = this.encoder(buffRemote, recv);
+                    local.BeginSend(dest, 0, recv, 0, new AsyncCallback(RemoteSendCallback), null);
+                    remote.BeginReceive(buffRemote, 0, BUFFSIZE, 0, new AsyncCallback(RemoteRecvCallback), null);
+                    return;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //Console.WriteLine(ex.ToString());
-                fallback();
+                fallback(ex);
             }
         }
 
@@ -125,23 +124,25 @@ namespace Proxy
             try
             {
                 local.EndSend(ar);
-                remote.BeginReceive(buffRemote, 0, BUFFSIZE, 0, new AsyncCallback(RemoteRecvCallback), null);
+                return;             
             }
-            catch (Exception)
+            catch (SocketException ex)
             {
-                //Console.WriteLine(ex.ToString());
-                fallback();
+                fallback(ex);
             }
         }
 
-        private unsafe void encoder(byte[] str, int length)
+        private unsafe byte[] encoder(byte[] str, int length)
         {
+            byte[] dest = new byte[length];
+            System.Buffer.BlockCopy(str, 0, dest, 0, length);
+        
             if(length<=0)
             {
-                return;
+                return null;
             }
 
-            fixed(byte* source= str)
+            fixed(byte* source= dest)
             {
                 byte* p = source + length - 1;
 
@@ -151,6 +152,7 @@ namespace Proxy
                     p--;
                 }
             }
+            return dest;
         }
     }
 }
