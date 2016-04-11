@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="PortForward.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="SocksFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
