@@ -128,7 +128,7 @@ namespace Proxy
                 local.EndSend(ar);
                 return;             
             }
-            catch (SocketException ex)
+            catch (Exception ex)
             {
                 fallback(ex);
             }
