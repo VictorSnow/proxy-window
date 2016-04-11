@@ -83,8 +83,9 @@ namespace Proxy
             }
             catch (Exception ex)
             {
-                fallback(ex);
+                
             }
+            fallback(null);
         }
 
         public void LocalSendCallback(IAsyncResult ar)
@@ -115,8 +116,9 @@ namespace Proxy
             }
             catch (Exception ex)
             {
-                fallback(ex);
+                
             }
+            fallback(null);
         }
 
         public void RemoteSendCallback(IAsyncResult ar)
