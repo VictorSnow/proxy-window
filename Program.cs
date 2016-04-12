@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+
 
 namespace Proxy
 {
     class Program
     {
-#if DEBUG
+#if true
         const string IPADDRESS = "106.185.26.94";
         const int PORT = 9001;
         const int BACKPORT = 1090;

@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Proxy
 {
@@ -81,7 +79,7 @@ namespace Proxy
                     return;   
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 
             }
@@ -114,7 +112,7 @@ namespace Proxy
                     return;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 
             }

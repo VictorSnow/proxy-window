@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+
 
 namespace Proxy
 {
-    class SocksFactory
+    class SocksFactory : IDisposable
     {
         // 需要预先连接的套接字地址和端口
         public string address;
@@ -51,15 +51,20 @@ namespace Proxy
                             sock.BeginSend(new byte[] { 1, 1, 0, 0 }, 0, 4, 0, new AsyncCallback(heardbeatCallback), sock);
                         }
                     }
+                    Console.WriteLine("发送心跳包");
                 }
             }
         }
 
         public Socket getSocket()
         {
-            lock(lsocks)
-            {
-                getSem.WaitOne();
+            getSem.WaitOne();
+            lock (lsocks)
+            {                
+                if(lsocks.Count == 0)
+                {
+                    throw new Exception("同步异常");
+                }
                 Socket sock = lsocks.First.Value;
                 lsocks.RemoveFirst();
                 ConnectSem.Release();              
@@ -119,6 +124,23 @@ namespace Proxy
             {
                 removeSocket(remote);
                 Console.WriteLine("心跳失败");
+            }
+        }
+
+        public void Dispose()
+        {
+            getSem.Close();
+            ConnectSem.Close();
+
+            foreach(Socket sock in lsocks)
+            {
+                try
+                {
+                    sock.Close();
+                }catch(Exception)
+                {
+
+                }
             }
         }
     }
