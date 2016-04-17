@@ -24,6 +24,11 @@ namespace Proxy
 
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler((object sender, UnhandledExceptionEventArgs e) => {
+                Console.WriteLine(e.ExceptionObject.ToString());
+                Console.ReadKey();
+            });
+
             socks = new SocksFactory();
             socks.address = IPADDRESS;
             socks.port = PORT;

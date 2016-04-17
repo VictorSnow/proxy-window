@@ -48,7 +48,14 @@ namespace Proxy
                         foreach (Socket sock in lsocks)
                         {
                             // 发送心跳包
-                            sock.BeginSend(new byte[] { 1, 1, 0, 0 }, 0, 4, 0, new AsyncCallback(heardbeatCallback), sock);
+                            try
+                            {
+                                sock.BeginSend(new byte[] { 1, 1, 0, 0 }, 0, 4, 0, new AsyncCallback(heardbeatCallback), sock);
+                            }
+                            catch(Exception)
+                            {
+                                removeSocket(sock);
+                            }
                         }
                     }
                     Console.WriteLine("发送心跳包");
