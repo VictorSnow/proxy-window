@@ -84,17 +84,25 @@ namespace Proxy
             lock(lsocks)
             {
                 lsocks.Remove(remote);
-                ConnectSem.Release();
             }
+            ConnectSem.Release();
         }
         
         public void tryConnect()
         {
             Console.WriteLine("尝试连接");
             // 连接到远程服务器
-            Socket remote = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            remote.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
-            remote.BeginConnect(new IPEndPoint(IPAddress.Parse(address), port), new AsyncCallback(remoteConnectedCallback), remote);
+            try
+            {
+                Socket remote = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                remote.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
+                remote.BeginConnect(new IPEndPoint(IPAddress.Parse(address), port), new AsyncCallback(remoteConnectedCallback), remote);
+            }
+            catch(Exception)
+            {
+                ConnectSem.Release();
+                Console.WriteLine("连接失败");
+            } 
         }
 
         public void remoteConnectedCallback(IAsyncResult ar)
@@ -107,9 +115,9 @@ namespace Proxy
                 lock(lsocks)
                 {
                     lsocks.AddLast(remote);
-                    getSem.Release();
-                    Console.WriteLine("加入新的链接");
                 }
+                getSem.Release();
+                Console.WriteLine("加入新的链接");
             }
             catch (Exception)
             {
