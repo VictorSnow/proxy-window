@@ -10,7 +10,7 @@ namespace Proxy
 {
     class Program
     {
-#if true
+#if DEBUG
         const string IPADDRESS = "106.185.26.94";
         const int PORT = 9001;
         const int BACKPORT = 1090;
@@ -54,7 +54,8 @@ namespace Proxy
             {
                 Socket conn = sock.EndAccept(ar);
                 Socket remote = socks.getSocket();
-                remote.BeginSend(new byte[] { 0, 1, 0, 1, 1234 / 256, 1234 % 256 }, 0, 6, 0, new AsyncCallback(remoteHandShake), new object[] { remote, conn});            
+                // send port number want to connect
+                remote.BeginSend(new byte[] { 0, 1, 0, 1, 1234 / 256, 1234 % 256 }, 0, 6, 0, new AsyncCallback(remoteHandShakeSuccess), new object[] { remote, conn});            
             }
             catch (Exception ex)
             {
@@ -63,7 +64,7 @@ namespace Proxy
             sock.BeginAccept(new AsyncCallback(AcceptCallback), sock);
         }
 
-        public static void remoteHandShake(IAsyncResult ar)
+        public static void remoteHandShakeSuccess(IAsyncResult ar)
         {
             object[] obj = ((object[])ar.AsyncState);
             Socket remote = (Socket)obj[0];
@@ -72,9 +73,12 @@ namespace Proxy
             try
             {
                 remote.EndSend(ar);
-                // 开始转发端口
-                PortForward pf = new PortForward(conn, remote);
-                pf.startForward();
+
+                SocketWrapper connWrapper = new SocketWrapper(conn);
+                SocketWrapper remoteWrapper = new SocketWrapper(remote);
+
+                connWrapper.attach((byte[] buffer, int length) => { remoteWrapper.send(buffer, length); }, () => { remoteWrapper.endSocket(); }).recv();
+                remoteWrapper.attach((byte[] buffer, int length) => { connWrapper.send(buffer, length); }, () => { connWrapper.endSocket(); }).recv();
             }
             catch(Exception ex)
             {

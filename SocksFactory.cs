@@ -100,9 +100,9 @@ namespace Proxy
         public void tryConnect()
         {
             Console.WriteLine("尝试连接");
-            // 连接到远程服务器
             try
             {
+                // 连接到远程服务器
                 Socket remote = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 remote.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
                 remote.BeginConnect(new IPEndPoint(IPAddress.Parse(address), port), new AsyncCallback(remoteConnectedCallback), remote);
