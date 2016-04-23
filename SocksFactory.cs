@@ -16,7 +16,7 @@ namespace Proxy
         public int port;
 
         // 预先创建的套接字列表
-        public LinkedList<Socket> lsocks = new LinkedList<Socket>();
+        public List<Socket> lsocks = new List<Socket>();
         // 上一次的心跳包
         public double lastHeartBeat = 0;
         // 当前Socket列表可用的的信号量
@@ -45,14 +45,15 @@ namespace Proxy
                     lastHeartBeat = now;
                     lock (lsocks)
                     {
-                        foreach (Socket sock in lsocks)
+                        for(int i = lsocks.Count-1; i>=0; i--)
                         {
+                            Socket sock = lsocks[i];
                             // 发送心跳包
                             try
                             {
                                 sock.BeginSend(new byte[] { 1, 1, 0, 0 }, 0, 4, 0, new AsyncCallback(heardbeatCallback), sock);
                             }
-                            catch(Exception)
+                            catch (Exception)
                             {
                                 removeSocket(sock);
                             }
@@ -72,8 +73,8 @@ namespace Proxy
                 {
                     throw new Exception("同步异常");
                 }
-                Socket sock = lsocks.First.Value;
-                lsocks.RemoveFirst();
+                Socket sock = lsocks[0];
+                lsocks.Remove(sock);
                 ConnectSem.Release();              
                 return sock;
             }
@@ -85,6 +86,7 @@ namespace Proxy
             {
                 lsocks.Remove(remote);
             }
+            getSem.WaitOne();
             ConnectSem.Release();
         }
         
@@ -114,7 +116,7 @@ namespace Proxy
                 remote.EndConnect(ar);
                 lock(lsocks)
                 {
-                    lsocks.AddLast(remote);
+                    lsocks.Add(remote);
                 }
                 getSem.Release();
                 Console.WriteLine("加入新的链接");

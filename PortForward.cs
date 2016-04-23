@@ -34,11 +34,14 @@ namespace Proxy
 
         public void fallback(Exception e)
         {
-            //Console.WriteLine(e.ToString());
-
+            if(e != null)
+            {
+                Console.WriteLine(e.ToString());
+            }
+            
             try
             {
-                if(local != null)
+                if(buffLocal != null)
                 {
                     local.Close();
                     local = null;
@@ -51,7 +54,7 @@ namespace Proxy
             }
             try
             {
-                if(remote != null)
+                if(buffRemote != null)
                 {
                     remote.Close();
                     remote = null;
@@ -70,13 +73,16 @@ namespace Proxy
         {
             try
             {
-                int recv = local.EndReceive(ar);
-                if(recv > 0)
+                if(local != null && remote != null)
                 {
-                    byte[] dest = this.encoder(buffLocal, recv);
-                    remote.BeginSend(dest, 0, recv, 0, new AsyncCallback(LocalSendCallback), null);
-                    local.BeginReceive(buffLocal, 0, BUFFSIZE, 0, new AsyncCallback(LocalRecvCallback), null);
-                    return;   
+                    int recv = local.EndReceive(ar);
+                    if (recv > 0)
+                    {
+                        byte[] dest = this.encoder(buffLocal, recv);
+                        remote.BeginSend(dest, 0, recv, 0, new AsyncCallback(LocalSendCallback), null);
+                        local.BeginReceive(buffLocal, 0, BUFFSIZE, 0, new AsyncCallback(LocalRecvCallback), null);
+                        return;
+                    }
                 }
             }
             catch (Exception)
@@ -103,13 +109,16 @@ namespace Proxy
         {
             try
             {
-                int recv = remote.EndReceive(ar);
-                if (recv > 0)
+                if (local != null && remote != null)
                 {
-                    byte[] dest = this.encoder(buffRemote, recv);
-                    local.BeginSend(dest, 0, recv, 0, new AsyncCallback(RemoteSendCallback), null);
-                    remote.BeginReceive(buffRemote, 0, BUFFSIZE, 0, new AsyncCallback(RemoteRecvCallback), null);
-                    return;
+                    int recv = remote.EndReceive(ar);
+                    if (recv > 0)
+                    {
+                        byte[] dest = this.encoder(buffRemote, recv);
+                        local.BeginSend(dest, 0, recv, 0, new AsyncCallback(RemoteSendCallback), null);
+                        remote.BeginReceive(buffRemote, 0, BUFFSIZE, 0, new AsyncCallback(RemoteRecvCallback), null);
+                        return;
+                    }
                 }
             }
             catch (Exception)
