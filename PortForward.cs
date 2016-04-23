@@ -15,6 +15,8 @@ namespace Proxy
         private byte[] buffLocal = new byte[BUFFSIZE];
         private byte[] buffRemote = new byte[BUFFSIZE];
 
+        private bool closed = false;
+
         public PortForward(Socket local, Socket remote)
         {
             this.local = local;
@@ -38,6 +40,12 @@ namespace Proxy
             {
                 Console.WriteLine(e.ToString());
             }
+
+            if(closed)
+            {
+                return;
+            }
+            closed = true;
             
             try
             {
@@ -73,7 +81,7 @@ namespace Proxy
         {
             try
             {
-                if(local != null && remote != null)
+                if(!closed)
                 {
                     int recv = local.EndReceive(ar);
                     if (recv > 0)
@@ -109,7 +117,7 @@ namespace Proxy
         {
             try
             {
-                if (local != null && remote != null)
+                if (!closed)
                 {
                     int recv = remote.EndReceive(ar);
                     if (recv > 0)
