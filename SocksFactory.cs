@@ -82,12 +82,19 @@ namespace Proxy
 
         public void removeSocket(Socket remote)
         {
-            lock(lsocks)
-            {
-                lsocks.Remove(remote);
-            }
             getSem.WaitOne();
-            ConnectSem.Release();
+            lock (lsocks)
+            {
+                if(!lsocks.Remove(remote))
+                {
+                    // 移除的时候分配出去了
+                    getSem.Release();
+                }
+                else
+                {
+                    ConnectSem.Release();
+                }
+            }
         }
         
         public void tryConnect()
@@ -114,11 +121,11 @@ namespace Proxy
             try
             {
                 remote.EndConnect(ar);
-                lock(lsocks)
+                lock (lsocks)
                 {
                     lsocks.Add(remote);
+                    getSem.Release();
                 }
-                getSem.Release();
                 Console.WriteLine("加入新的链接");
             }
             catch (Exception)
